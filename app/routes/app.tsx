@@ -19,6 +19,9 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">Home</s-link>
+        <s-link href="/app/cenove-hladiny">Cenové hladiny</s-link>
+        <s-link href="/app/ceniky">Ceníky dodavatelů</s-link>
+        <s-link href="/app/hardstop">Hardstop pravidla</s-link>
         <s-link href="/app/additional">Additional page</s-link>
       </s-app-nav>
       <Outlet />

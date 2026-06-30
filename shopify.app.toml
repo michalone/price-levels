@@ -9,29 +9,295 @@ name = "price-levels"
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products,write_metaobjects,write_metaobject_definitions"
 
-[product.metafields.app.demo_info]
-type = "single_line_text_field"
-name = "Demo Source Info"
-description = "Tracks products created by the Shopify app template for development"
+# =====================================================================
+# Metaobjekty (app-owned) pro B2B cenotvorbu
+# =====================================================================
 
-  [product.metafields.app.demo_info.access]
-  admin = "merchant_read_write"
+# 1) Cenová hladina
+[metaobjects.app.cenova_hladina]
+name = "Cenová hladina"
+description = "Definice cenové hladiny (sloupce ceníku) pro B2B cenotvorbu"
+display_name_field = "nazev"
+access.admin = "merchant_read_write"
 
-[metaobjects.app.example]
-name = "Example"
-description = "An example metaobject definition created by this template"
+  [metaobjects.app.cenova_hladina.fields.nazev]
+  name = "Název"
+  type = "single_line_text_field"
+  required = true
 
-  [metaobjects.app.example.access]
-  admin = "merchant_read_write"
+  [metaobjects.app.cenova_hladina.fields.kod]
+  name = "Kód"
+  type = "single_line_text_field"
+  required = true
 
-[metaobjects.app.example.fields.title]
-name = "Title"
-type = "single_line_text_field"
-required = true
+  [metaobjects.app.cenova_hladina.fields.zaklad]
+  name = "Základ"
+  type = "single_line_text_field"
+  required = true
+  validations.choices = ["NC", "RRP"]
 
-[metaobjects.app.example.fields.description]
-name = "Description"
-type = "multi_line_text_field"
+  [metaobjects.app.cenova_hladina.fields.operace]
+  name = "Operace"
+  type = "single_line_text_field"
+  required = true
+  validations.choices = ["plus_pct", "minus_pct", "plus_eur"]
+
+  [metaobjects.app.cenova_hladina.fields.hodnota]
+  name = "Hodnota"
+  type = "number_decimal"
+  required = true
+
+  [metaobjects.app.cenova_hladina.fields.zaokrouhleni]
+  name = "Zaokrouhlení"
+  type = "number_decimal"
+
+  [metaobjects.app.cenova_hladina.fields.poradi]
+  name = "Pořadí"
+  type = "number_integer"
+
+  [metaobjects.app.cenova_hladina.fields.aktivni]
+  name = "Aktivní"
+  type = "boolean"
+
+# 2) Partner
+[metaobjects.app.partner]
+name = "Partner"
+description = "Obchodní partner (dodavatel / odběratel)"
+display_name_field = "nazev"
+access.admin = "merchant_read_write"
+
+  [metaobjects.app.partner.fields.nazev]
+  name = "Název"
+  type = "single_line_text_field"
+  required = true
+
+  [metaobjects.app.partner.fields.typ]
+  name = "Typ"
+  type = "single_line_text_field"
+  required = true
+  validations.choices = ["dodavatel", "odberatel", "oboji"]
+
+  [metaobjects.app.partner.fields.ico]
+  name = "IČO"
+  type = "single_line_text_field"
+
+  [metaobjects.app.partner.fields.dic]
+  name = "DIČ"
+  type = "single_line_text_field"
+
+  [metaobjects.app.partner.fields.ic_dph]
+  name = "IČ DPH"
+  type = "single_line_text_field"
+
+  [metaobjects.app.partner.fields.id_pohoda]
+  name = "ID Pohoda"
+  type = "single_line_text_field"
+
+  [metaobjects.app.partner.fields.vlastni_cenova_hladina]
+  name = "Vlastní cenová hladina"
+  type = "boolean"
+
+  [metaobjects.app.partner.fields.company_ref]
+  name = "Company"
+  type = "company_reference"
+
+  [metaobjects.app.partner.fields.okno_zavoz]
+  name = "Okno závozu"
+  type = "single_line_text_field"
+
+  [metaobjects.app.partner.fields.nakladka]
+  name = "Nakládka"
+  type = "single_line_text_field"
+
+# 3) Ceník dodavatele
+[metaobjects.app.cenik_dodavatele]
+name = "Ceník dodavatele"
+description = "Nákupní ceník konkrétního dodavatele a navázané cenové hladiny"
+display_name_field = "nazev"
+access.admin = "merchant_read_write"
+
+  [metaobjects.app.cenik_dodavatele.fields.nazev]
+  name = "Název"
+  type = "single_line_text_field"
+  required = true
+
+  [metaobjects.app.cenik_dodavatele.fields.dodavatel]
+  name = "Dodavatel"
+  type = "metaobject_reference<$app:partner>"
+  required = true
+
+  [metaobjects.app.cenik_dodavatele.fields.sloupce]
+  name = "Sloupce (cenové hladiny)"
+  type = "list.metaobject_reference<$app:cenova_hladina>"
+  required = true
+
+  [metaobjects.app.cenik_dodavatele.fields.zdrojovy_feed]
+  name = "Zdrojový feed"
+  type = "single_line_text_field"
+
+  [metaobjects.app.cenik_dodavatele.fields.platnost_od]
+  name = "Platnost od"
+  type = "date"
+
+  [metaobjects.app.cenik_dodavatele.fields.platnost_do]
+  name = "Platnost do"
+  type = "date"
+
+# 4) Individuální cena
+[metaobjects.app.individualni_cena]
+name = "Individuální cena"
+description = "Individuální cena pro konkrétního zákazníka a variantu"
+access.admin = "merchant_read_write"
+
+  [metaobjects.app.individualni_cena.fields.zakaznik]
+  name = "Zákazník"
+  type = "company_reference"
+  required = true
+
+  [metaobjects.app.individualni_cena.fields.variant]
+  name = "Varianta"
+  type = "variant_reference"
+  required = true
+
+  [metaobjects.app.individualni_cena.fields.cena]
+  name = "Cena"
+  type = "money"
+  required = true
+
+  [metaobjects.app.individualni_cena.fields.typ]
+  name = "Typ"
+  type = "single_line_text_field"
+  validations.choices = ["pevna", "marze_eur", "hardstop_vyjimka"]
+
+  [metaobjects.app.individualni_cena.fields.platnost_od]
+  name = "Platnost od"
+  type = "date"
+
+  [metaobjects.app.individualni_cena.fields.platnost_do]
+  name = "Platnost do"
+  type = "date"
+
+  [metaobjects.app.individualni_cena.fields.duvod]
+  name = "Důvod"
+  type = "single_line_text_field"
+
+# 5) Hardstop pravidlo
+[metaobjects.app.hardstop_pravidlo]
+name = "Hardstop pravidlo"
+description = "Pravidlo pro tvrdé limity cenotvorby (blokace / snížení / skrytí)"
+display_name_field = "nazev"
+access.admin = "merchant_read_write"
+
+  [metaobjects.app.hardstop_pravidlo.fields.nazev]
+  name = "Název"
+  type = "single_line_text_field"
+  required = true
+
+  [metaobjects.app.hardstop_pravidlo.fields.podminka]
+  name = "Podmínka"
+  type = "single_line_text_field"
+  required = true
+
+  [metaobjects.app.hardstop_pravidlo.fields.akce]
+  name = "Akce"
+  type = "single_line_text_field"
+  required = true
+  validations.choices = ["blok", "nizsi", "skryt"]
+
+  [metaobjects.app.hardstop_pravidlo.fields.vyjimka_v_nabidce]
+  name = "Výjimka v nabídce"
+  type = "boolean"
+
+  [metaobjects.app.hardstop_pravidlo.fields.aktivni]
+  name = "Aktivní"
+  type = "boolean"
+
+# 6) Audit ceny
+[metaobjects.app.cena_audit]
+name = "Audit ceny"
+description = "Auditní záznam o změně ceny / cenové entity"
+access.admin = "merchant_read_write"
+
+  [metaobjects.app.cena_audit.fields.entita]
+  name = "Entita"
+  type = "single_line_text_field"
+  required = true
+  validations.choices = ["hladina", "cenik", "indiv", "nabidka"]
+
+  [metaobjects.app.cena_audit.fields.entita_ref]
+  name = "Reference entity"
+  type = "single_line_text_field"
+
+  [metaobjects.app.cena_audit.fields.stara_hodnota]
+  name = "Stará hodnota"
+  type = "single_line_text_field"
+
+  [metaobjects.app.cena_audit.fields.nova_hodnota]
+  name = "Nová hodnota"
+  type = "single_line_text_field"
+
+  [metaobjects.app.cena_audit.fields.zmenil]
+  name = "Změnil"
+  type = "single_line_text_field"
+
+  [metaobjects.app.cena_audit.fields.datum]
+  name = "Datum"
+  type = "date_time"
+  required = true
+
+# =====================================================================
+# Metafield definice (app-owned)
+# Pozn.: deklarativní config umisťuje app metafieldy do rezervovaného
+# namespace "app" ($app). Logické namespace cena./feed. ze specifikace
+# se mapují na klíče pod $app (GraphQL: namespace "$app", key níže).
+# =====================================================================
+
+# --- Company ---
+[company.metafields.app.vychozi_hladina]
+name = "Výchozí cenová hladina"
+type = "metaobject_reference<$app:cenova_hladina>"
+description = "Výchozí cenová hladina pro danou společnost"
+access.admin = "merchant_read_write"
+
+[company.metafields.app.pravidla]
+name = "Cenová pravidla"
+type = "list.metaobject_reference<$app:cenova_hladina>"
+description = "Seznam cenových hladin / pravidel platných pro společnost"
+access.admin = "merchant_read_write"
+
+[company.metafields.app.doprava_zdarma]
+name = "Doprava zdarma"
+type = "boolean"
+description = "Příznak dopravy zdarma pro společnost"
+access.admin = "merchant_read_write"
+
+# --- ProductVariant ---
+# Pozn.: CLI může při deploy varianta-metafield bloky ignorovat; v takovém
+# případě je nutná runtime registrace přes metafieldDefinitionCreate.
+[variant.metafields.app.nc]
+name = "Nákupní cena (NC)"
+type = "money"
+description = "Nákupní cena varianty"
+access.admin = "merchant_read_write"
+
+[variant.metafields.app.rrp]
+name = "Doporučená cena (RRP)"
+type = "money"
+description = "Doporučená maloobchodní cena varianty"
+access.admin = "merchant_read_write"
+
+[variant.metafields.app.dodavatel]
+name = "Dodavatel"
+type = "metaobject_reference<$app:partner>"
+description = "Dodavatel dané varianty"
+access.admin = "merchant_read_write"
+
+# --- Product ---
+[product.metafields.app.zamky]
+name = "Zámky feedu"
+type = "json"
+description = "Zámky polí proti přepisu importním feedem"
+access.admin = "merchant_read_write"
 
 [webhooks]
 api_version = "2026-07"
