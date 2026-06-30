@@ -1,3 +1,11 @@
 {
-  "name": "Cenová hladina (B2B)"
+  "title": "B2B price level",
+  "company": "Company: {name}",
+  "defaultLevel": "Default price level",
+  "none": "— none —",
+  "save": "Save",
+  "saved": "Saved.",
+  "saveFailed": "Saving failed.",
+  "loadError": "Failed to load the data.",
+  "noCompany": "This customer is not assigned to any company."
 }

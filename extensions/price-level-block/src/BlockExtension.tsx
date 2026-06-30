@@ -14,9 +14,14 @@ import { useEffect, useState } from "react";
 
 const TARGET = "admin.customer-details.block.render";
 
+// App-owned Company metafield declared in shopify.app.toml as
+// [company.metafields.pricing.default_level] -> reserved namespace "$app:pricing".
+const METAFIELD_NAMESPACE = "$app:pricing";
+const METAFIELD_KEY = "default_level";
+
 export default reactExtension(TARGET, () => <App />);
 
-interface Hladina {
+interface Level {
   id: string;
   label: string;
 }
@@ -27,7 +32,7 @@ interface LoadResult {
       company: {
         id: string;
         name: string;
-        vychozi: { value: string } | null;
+        defaultLevel: { value: string } | null;
       };
     }>;
   } | null;
@@ -43,14 +48,14 @@ interface SaveResult {
 }
 
 function App() {
-  const { data, query } = useApi(TARGET);
+  const { data, query, i18n } = useApi(TARGET);
   const customerId = data.selected[0]?.id;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState("");
-  const [hladiny, setHladiny] = useState<Hladina[]>([]);
+  const [levels, setLevels] = useState<Level[]>([]);
   const [selected, setSelected] = useState("");
   const [message, setMessage] = useState("");
 
@@ -69,13 +74,13 @@ function App() {
               company {
                 id
                 name
-                vychozi: metafield(namespace: "$app", key: "vychozi_hladina") {
+                defaultLevel: metafield(namespace: "${METAFIELD_NAMESPACE}", key: "${METAFIELD_KEY}") {
                   value
                 }
               }
             }
           }
-          metaobjects(type: "$app:cenova_hladina", first: 100) {
+          metaobjects(type: "$app:price_level", first: 100) {
             edges {
               node {
                 id
@@ -87,22 +92,22 @@ function App() {
         { variables: { id: customerId } },
       );
 
-      const levels =
+      const loadedLevels =
         res?.data?.metaobjects?.edges?.map((e) => ({
           id: e.node.id,
           label: e.node.displayName,
         })) ?? [];
-      setHladiny(levels);
+      setLevels(loadedLevels);
 
       const company =
         res?.data?.customer?.companyContactProfiles?.[0]?.company ?? null;
       if (company) {
         setCompanyId(company.id);
         setCompanyName(company.name);
-        setSelected(company.vychozi?.value ?? "");
+        setSelected(company.defaultLevel?.value ?? "");
       }
     } catch (e) {
-      setMessage("Nepodařilo se načíst data.");
+      setMessage(i18n.translate("loadError"));
     } finally {
       setLoading(false);
     }
@@ -114,7 +119,7 @@ function App() {
     setMessage("");
     try {
       const res = await query<SaveResult>(
-        `mutation SetHladina($metafields: [MetafieldsSetInput!]!) {
+        `mutation SetDefaultLevel($metafields: [MetafieldsSetInput!]!) {
           metafieldsSet(metafields: $metafields) {
             userErrors {
               field
@@ -127,8 +132,8 @@ function App() {
             metafields: [
               {
                 ownerId: companyId,
-                namespace: "$app",
-                key: "vychozi_hladina",
+                namespace: METAFIELD_NAMESPACE,
+                key: METAFIELD_KEY,
                 type: "metaobject_reference",
                 value: selected,
               },
@@ -137,9 +142,9 @@ function App() {
         },
       );
       const errs = res?.data?.metafieldsSet?.userErrors ?? [];
-      setMessage(errs.length ? errs[0].message : "Uloženo.");
+      setMessage(errs.length ? errs[0].message : i18n.translate("saved"));
     } catch (e) {
-      setMessage("Uložení selhalo.");
+      setMessage(i18n.translate("saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -147,7 +152,7 @@ function App() {
 
   if (loading) {
     return (
-      <AdminBlock title="Cenová hladina (B2B)">
+      <AdminBlock title={i18n.translate("title")}>
         <InlineStack inlineAlignment="center">
           <ProgressIndicator size="small-200" />
         </InlineStack>
@@ -156,26 +161,24 @@ function App() {
   }
 
   return (
-    <AdminBlock title="Cenová hladina (B2B)">
+    <AdminBlock title={i18n.translate("title")}>
       <BlockStack gap="base">
         {!companyId ? (
-          <Banner tone="info">
-            Tento zákazník není přiřazen k žádné společnosti (Company).
-          </Banner>
+          <Banner tone="info">{i18n.translate("noCompany")}</Banner>
         ) : (
           <BlockStack gap="base">
-            <Text>Společnost: {companyName}</Text>
+            <Text>{i18n.translate("company", { name: companyName })}</Text>
             <Select
-              label="Výchozí cenová hladina"
+              label={i18n.translate("defaultLevel")}
               value={selected}
               onChange={(value: string) => setSelected(value)}
               options={[
-                { value: "", label: "— žádná —" },
-                ...hladiny.map((h) => ({ value: h.id, label: h.label })),
+                { value: "", label: i18n.translate("none") },
+                ...levels.map((l) => ({ value: l.id, label: l.label })),
               ]}
             />
             <Button variant="primary" disabled={saving} onClick={save}>
-              Uložit
+              {i18n.translate("save")}
             </Button>
           </BlockStack>
         )}

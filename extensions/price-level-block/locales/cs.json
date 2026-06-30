@@ -1,0 +1,11 @@
+{
+  "title": "B2B cenová hladina",
+  "company": "Společnost: {name}",
+  "defaultLevel": "Výchozí cenová hladina",
+  "none": "— žádná —",
+  "save": "Uložit",
+  "saved": "Uloženo.",
+  "saveFailed": "Uložení selhalo.",
+  "loadError": "Nepodařilo se načíst data.",
+  "noCompany": "Tento zákazník není přiřazen k žádné společnosti."
+}

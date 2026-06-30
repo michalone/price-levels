@@ -1,8 +1,10 @@
 api_version = "2025-04"
 
 [[extensions]]
-name = "Cenová hladina (B2B)"
-handle = "cenova-hladina-block"
+name = "t:title"
+handle = "price-level-block"
+
+uid = "f2d08778-a416-2d4e-64ea-3aaa47eb8027f721e736"
 type = "ui_extension"
 
   [[extensions.targeting]]
