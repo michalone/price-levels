@@ -1,23 +1,21 @@
-import type {
-  HeadersFunction,
-  LoaderFunctionArgs,
-} from "react-router";
+import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
+import { useTranslation } from "../i18n/context";
 
-const METAOBJECT_TYPE = "$app:cenik_dodavatele";
+const METAOBJECT_TYPE = "$app:supplier_price_list";
 
-interface CenikRow {
+interface PriceListRow {
   id: string;
-  nazev: string;
-  dodavatel: string;
-  pocetSloupcu: number;
-  platnostOd: string;
-  platnostDo: string;
+  name: string;
+  supplier: string;
+  columnsCount: number;
+  validFrom: string;
+  validTo: string;
 }
 
-interface CenikyResponse {
+interface PriceListsResponse {
   data?: {
     metaobjects?: {
       edges: Array<{
@@ -36,7 +34,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const response = await admin.graphql(
     `#graphql
-    query CenikyDodavatelu($type: String!) {
+    query SupplierPriceLists($type: String!) {
       metaobjects(type: $type, first: 100) {
         edges {
           node {
@@ -53,63 +51,60 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     { variables: { type: METAOBJECT_TYPE } },
   );
 
-  const json = (await response.json()) as CenikyResponse;
+  const json = (await response.json()) as PriceListsResponse;
   const edges = json.data?.metaobjects?.edges ?? [];
 
-  const ceniky: CenikRow[] = edges.map(({ node }) => {
+  const priceLists: PriceListRow[] = edges.map(({ node }) => {
     const fields: Record<string, string> = {};
     for (const f of node.fields) fields[f.key] = f.value ?? "";
-    let pocetSloupcu = 0;
+    let columnsCount = 0;
     try {
-      pocetSloupcu = fields.sloupce
-        ? (JSON.parse(fields.sloupce) as string[]).length
+      columnsCount = fields.columns
+        ? (JSON.parse(fields.columns) as string[]).length
         : 0;
     } catch {
-      pocetSloupcu = 0;
+      columnsCount = 0;
     }
     return {
       id: node.id,
-      nazev: fields.nazev || node.displayName,
-      dodavatel: fields.dodavatel ?? "",
-      pocetSloupcu,
-      platnostOd: fields.platnost_od ?? "",
-      platnostDo: fields.platnost_do ?? "",
+      name: fields.name || node.displayName,
+      supplier: fields.supplier ?? "",
+      columnsCount,
+      validFrom: fields.valid_from ?? "",
+      validTo: fields.valid_to ?? "",
     };
   });
 
-  return { ceniky };
+  return { priceLists };
 };
 
-export default function Ceniky() {
-  const { ceniky } = useLoaderData<typeof loader>();
+export default function PriceLists() {
+  const { priceLists } = useLoaderData<typeof loader>();
+  const t = useTranslation();
 
   return (
-    <s-page heading="Ceníky dodavatelů">
-      <s-section heading="Seznam ceníků">
-        <s-paragraph>
-          Přehled nákupních ceníků dodavatelů. Vytváření a úpravy ceníků jsou
-          zatím ve fázi skeletonu – data se načítají z metaobjektů{" "}
-          <s-text>app.cenik_dodavatele</s-text>.
-        </s-paragraph>
-        {ceniky.length === 0 ? (
-          <s-paragraph>Zatím nejsou žádné ceníky dodavatelů.</s-paragraph>
+    <s-page heading={t("priceLists.title")}>
+      <s-section heading={t("priceLists.listTitle")}>
+        <s-paragraph>{t("priceLists.intro")}</s-paragraph>
+        {priceLists.length === 0 ? (
+          <s-paragraph>{t("priceLists.empty")}</s-paragraph>
         ) : (
           <s-table>
             <s-table-header-row>
-              <s-table-header>Název</s-table-header>
-              <s-table-header>Dodavatel</s-table-header>
-              <s-table-header>Počet sloupců</s-table-header>
-              <s-table-header>Platnost od</s-table-header>
-              <s-table-header>Platnost do</s-table-header>
+              <s-table-header>{t("field.name")}</s-table-header>
+              <s-table-header>{t("field.supplier")}</s-table-header>
+              <s-table-header>{t("field.columnsCount")}</s-table-header>
+              <s-table-header>{t("field.validFrom")}</s-table-header>
+              <s-table-header>{t("field.validTo")}</s-table-header>
             </s-table-header-row>
             <s-table-body>
-              {ceniky.map((c) => (
-                <s-table-row key={c.id}>
-                  <s-table-cell>{c.nazev}</s-table-cell>
-                  <s-table-cell>{c.dodavatel}</s-table-cell>
-                  <s-table-cell>{String(c.pocetSloupcu)}</s-table-cell>
-                  <s-table-cell>{c.platnostOd}</s-table-cell>
-                  <s-table-cell>{c.platnostDo}</s-table-cell>
+              {priceLists.map((row) => (
+                <s-table-row key={row.id}>
+                  <s-table-cell>{row.name}</s-table-cell>
+                  <s-table-cell>{row.supplier}</s-table-cell>
+                  <s-table-cell>{String(row.columnsCount)}</s-table-cell>
+                  <s-table-cell>{row.validFrom}</s-table-cell>
+                  <s-table-cell>{row.validTo}</s-table-cell>
                 </s-table-row>
               ))}
             </s-table-body>

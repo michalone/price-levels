@@ -1,20 +1,18 @@
-import type {
-  HeadersFunction,
-  LoaderFunctionArgs,
-} from "react-router";
+import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
+import { useTranslation } from "../i18n/context";
 
-const METAOBJECT_TYPE = "$app:hardstop_pravidlo";
+const METAOBJECT_TYPE = "$app:hardstop_rule";
 
 interface HardstopRow {
   id: string;
-  nazev: string;
-  podminka: string;
-  akce: string;
-  vyjimkaVNabidce: boolean;
-  aktivni: boolean;
+  name: string;
+  condition: string;
+  action: string;
+  exceptionInQuote: boolean;
+  active: boolean;
 }
 
 interface HardstopResponse {
@@ -36,7 +34,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const response = await admin.graphql(
     `#graphql
-    query HardstopPravidla($type: String!) {
+    query HardstopRules($type: String!) {
       metaobjects(type: $type, first: 100) {
         edges {
           node {
@@ -56,52 +54,53 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const json = (await response.json()) as HardstopResponse;
   const edges = json.data?.metaobjects?.edges ?? [];
 
-  const pravidla: HardstopRow[] = edges.map(({ node }) => {
+  const rules: HardstopRow[] = edges.map(({ node }) => {
     const fields: Record<string, string> = {};
     for (const f of node.fields) fields[f.key] = f.value ?? "";
     return {
       id: node.id,
-      nazev: fields.nazev || node.displayName,
-      podminka: fields.podminka ?? "",
-      akce: fields.akce ?? "",
-      vyjimkaVNabidce: fields.vyjimka_v_nabidce === "true",
-      aktivni: fields.aktivni === "true",
+      name: fields.name || node.displayName,
+      condition: fields.condition ?? "",
+      action: fields.action ?? "",
+      exceptionInQuote: fields.exception_in_quote === "true",
+      active: fields.active === "true",
     };
   });
 
-  return { pravidla };
+  return { rules };
 };
 
 export default function Hardstop() {
-  const { pravidla } = useLoaderData<typeof loader>();
+  const { rules } = useLoaderData<typeof loader>();
+  const t = useTranslation();
 
   return (
-    <s-page heading="Hardstop pravidla">
-      <s-section heading="Seznam pravidel">
-        <s-paragraph>
-          Pravidla tvrdých limitů cenotvorby (blokace, snížení, skrytí).
-          Načítáno z metaobjektů <s-text>app.hardstop_pravidlo</s-text>. Editace
-          je zatím ve fázi skeletonu.
-        </s-paragraph>
-        {pravidla.length === 0 ? (
-          <s-paragraph>Zatím nejsou žádná hardstop pravidla.</s-paragraph>
+    <s-page heading={t("hardstop.title")}>
+      <s-section heading={t("hardstop.listTitle")}>
+        <s-paragraph>{t("hardstop.intro")}</s-paragraph>
+        {rules.length === 0 ? (
+          <s-paragraph>{t("hardstop.empty")}</s-paragraph>
         ) : (
           <s-table>
             <s-table-header-row>
-              <s-table-header>Název</s-table-header>
-              <s-table-header>Podmínka</s-table-header>
-              <s-table-header>Akce</s-table-header>
-              <s-table-header>Výjimka v nabídce</s-table-header>
-              <s-table-header>Aktivní</s-table-header>
+              <s-table-header>{t("field.name")}</s-table-header>
+              <s-table-header>{t("field.condition")}</s-table-header>
+              <s-table-header>{t("field.action")}</s-table-header>
+              <s-table-header>{t("field.exceptionInQuote")}</s-table-header>
+              <s-table-header>{t("field.active")}</s-table-header>
             </s-table-header-row>
             <s-table-body>
-              {pravidla.map((p) => (
-                <s-table-row key={p.id}>
-                  <s-table-cell>{p.nazev}</s-table-cell>
-                  <s-table-cell>{p.podminka}</s-table-cell>
-                  <s-table-cell>{p.akce}</s-table-cell>
-                  <s-table-cell>{p.vyjimkaVNabidce ? "Ano" : "Ne"}</s-table-cell>
-                  <s-table-cell>{p.aktivni ? "Ano" : "Ne"}</s-table-cell>
+              {rules.map((rule) => (
+                <s-table-row key={rule.id}>
+                  <s-table-cell>{rule.name}</s-table-cell>
+                  <s-table-cell>{rule.condition}</s-table-cell>
+                  <s-table-cell>{rule.action}</s-table-cell>
+                  <s-table-cell>
+                    {rule.exceptionInQuote ? t("common.yes") : t("common.no")}
+                  </s-table-cell>
+                  <s-table-cell>
+                    {rule.active ? t("common.yes") : t("common.no")}
+                  </s-table-cell>
                 </s-table-row>
               ))}
             </s-table-body>

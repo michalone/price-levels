@@ -8,12 +8,13 @@ import { useFetcher, useLoaderData, useRouteError } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
+import { useTranslation } from "../i18n/context";
 
-const METAOBJECT_TYPE = "$app:cenova_hladina";
+const METAOBJECT_TYPE = "$app:price_level";
 
 type FieldMap = Record<string, string>;
 
-interface CenovaHladina {
+interface PriceLevel {
   id: string;
   handle: string;
   displayName: string;
@@ -49,7 +50,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const response = await admin.graphql(
     `#graphql
-    query CenoveHladiny($type: String!) {
+    query PriceLevels($type: String!) {
       metaobjects(type: $type, first: 100) {
         edges {
           node {
@@ -70,7 +71,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const json = (await response.json()) as MetaobjectsQueryResponse;
   const edges = json.data?.metaobjects?.edges ?? [];
 
-  const hladiny: CenovaHladina[] = edges.map(({ node }) => {
+  const levels: PriceLevel[] = edges.map(({ node }) => {
     const fields: FieldMap = {};
     for (const f of node.fields) {
       fields[f.key] = f.value ?? "";
@@ -83,18 +84,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     };
   });
 
-  return { hladiny };
+  return { levels };
 };
 
 const FIELD_KEYS = [
-  "nazev",
-  "kod",
-  "zaklad",
-  "operace",
-  "hodnota",
-  "zaokrouhleni",
-  "poradi",
-  "aktivni",
+  "name",
+  "code",
+  "base",
+  "operation",
+  "value",
+  "rounding",
+  "position",
+  "active",
 ] as const;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -106,7 +107,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (intent === "delete" && id) {
     const response = await admin.graphql(
       `#graphql
-      mutation DeleteCenovaHladina($id: ID!) {
+      mutation DeletePriceLevel($id: ID!) {
         result: metaobjectDelete(id: $id) {
           deletedId
           userErrors { field message }
@@ -122,8 +123,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   // Build the metaobject fields from the submitted form.
   const fields = FIELD_KEYS.map((key) => {
     let value = String(formData.get(key) ?? "");
-    if (key === "aktivni") {
-      value = formData.get("aktivni") ? "true" : "false";
+    if (key === "active") {
+      value = formData.get("active") ? "true" : "false";
     }
     return { key, value };
   }).filter((f) => f.value !== "");
@@ -131,7 +132,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (id) {
     const response = await admin.graphql(
       `#graphql
-      mutation UpdateCenovaHladina($id: ID!, $metaobject: MetaobjectUpdateInput!) {
+      mutation UpdatePriceLevel($id: ID!, $metaobject: MetaobjectUpdateInput!) {
         result: metaobjectUpdate(id: $id, metaobject: $metaobject) {
           metaobject { id }
           userErrors { field message }
@@ -146,7 +147,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const response = await admin.graphql(
     `#graphql
-    mutation CreateCenovaHladina($metaobject: MetaobjectCreateInput!) {
+    mutation CreatePriceLevel($metaobject: MetaobjectCreateInput!) {
       result: metaobjectCreate(metaobject: $metaobject) {
         metaobject { id }
         userErrors { field message }
@@ -163,33 +164,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return { ok: errors.length === 0, errors };
 };
 
-const ZAKLAD_OPTIONS = [
-  { value: "NC", label: "NC (nákupní cena)" },
-  { value: "RRP", label: "RRP (doporučená cena)" },
-];
-
-const OPERACE_OPTIONS = [
-  { value: "plus_pct", label: "+ %" },
-  { value: "minus_pct", label: "− %" },
-  { value: "plus_eur", label: "+ EUR" },
-];
+const BASE_OPTIONS = ["NC", "RRP"] as const;
+const OPERATION_OPTIONS = ["plus_pct", "minus_pct", "plus_eur"] as const;
 
 const EMPTY_FORM: FieldMap = {
   id: "",
-  nazev: "",
-  kod: "",
-  zaklad: "NC",
-  operace: "plus_pct",
-  hodnota: "",
-  zaokrouhleni: "",
-  poradi: "",
-  aktivni: "true",
+  name: "",
+  code: "",
+  base: "NC",
+  operation: "plus_pct",
+  value: "",
+  rounding: "",
+  position: "",
+  active: "true",
 };
 
-export default function CenoveHladiny() {
-  const { hladiny } = useLoaderData<typeof loader>();
+export default function PriceLevels() {
+  const { levels } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const shopify = useAppBridge();
+  const t = useTranslation();
 
   const [form, setForm] = useState<FieldMap>(EMPTY_FORM);
   const isEditing = form.id !== "";
@@ -199,7 +193,9 @@ export default function CenoveHladiny() {
     if (fetcher.state === "idle" && fetcher.data) {
       if (fetcher.data.ok) {
         shopify.toast.show(
-          isEditing ? "Cenová hladina upravena" : "Cenová hladina vytvořena",
+          isEditing
+            ? t("priceLevels.toastUpdated")
+            : t("priceLevels.toastCreated"),
         );
         setForm(EMPTY_FORM);
       } else if (fetcher.data.errors?.length) {
@@ -217,21 +213,21 @@ export default function CenoveHladiny() {
     for (const key of Object.keys(form)) {
       if (form[key] !== "") payload[key] = form[key];
     }
-    if (form.aktivni !== "true") delete payload.aktivni;
+    if (form.active !== "true") delete payload.active;
     fetcher.submit(payload, { method: "POST" });
   };
 
-  const edit = (h: CenovaHladina) => {
+  const edit = (level: PriceLevel) => {
     setForm({
-      id: h.id,
-      nazev: h.fields.nazev ?? "",
-      kod: h.fields.kod ?? "",
-      zaklad: h.fields.zaklad || "NC",
-      operace: h.fields.operace || "plus_pct",
-      hodnota: h.fields.hodnota ?? "",
-      zaokrouhleni: h.fields.zaokrouhleni ?? "",
-      poradi: h.fields.poradi ?? "",
-      aktivni: h.fields.aktivni ?? "true",
+      id: level.id,
+      name: level.fields.name ?? "",
+      code: level.fields.code ?? "",
+      base: level.fields.base || "NC",
+      operation: level.fields.operation || "plus_pct",
+      value: level.fields.value ?? "",
+      rounding: level.fields.rounding ?? "",
+      position: level.fields.position ?? "",
+      active: level.fields.active ?? "true",
     });
   };
 
@@ -240,92 +236,96 @@ export default function CenoveHladiny() {
   };
 
   return (
-    <s-page heading="Cenové hladiny">
+    <s-page heading={t("priceLevels.title")}>
       <s-button
         slot="primary-action"
         variant="primary"
         onClick={() => setForm(EMPTY_FORM)}
       >
-        Nová hladina
+        {t("priceLevels.new")}
       </s-button>
 
-      <s-section heading={isEditing ? "Upravit hladinu" : "Nová hladina"}>
+      <s-section
+        heading={
+          isEditing ? t("priceLevels.formEdit") : t("priceLevels.formNew")
+        }
+      >
         <s-stack direction="block" gap="base">
           <s-text-field
-            label="Název"
-            name="nazev"
-            value={form.nazev}
+            label={t("field.name")}
+            name="name"
+            value={form.name}
             onChange={(e) =>
-              setField("nazev", (e.target as HTMLInputElement).value)
+              setField("name", (e.target as HTMLInputElement).value)
             }
           />
           <s-text-field
-            label="Kód"
-            name="kod"
-            value={form.kod}
+            label={t("field.code")}
+            name="code"
+            value={form.code}
             onChange={(e) =>
-              setField("kod", (e.target as HTMLInputElement).value)
+              setField("code", (e.target as HTMLInputElement).value)
             }
           />
           <s-select
-            label="Základ"
-            name="zaklad"
-            value={form.zaklad}
+            label={t("field.base")}
+            name="base"
+            value={form.base}
             onChange={(e) =>
-              setField("zaklad", (e.target as HTMLSelectElement).value)
+              setField("base", (e.target as HTMLSelectElement).value)
             }
           >
-            {ZAKLAD_OPTIONS.map((o) => (
-              <s-option key={o.value} value={o.value}>
-                {o.label}
+            {BASE_OPTIONS.map((o) => (
+              <s-option key={o} value={o}>
+                {t(`base.${o}`)}
               </s-option>
             ))}
           </s-select>
           <s-select
-            label="Operace"
-            name="operace"
-            value={form.operace}
+            label={t("field.operation")}
+            name="operation"
+            value={form.operation}
             onChange={(e) =>
-              setField("operace", (e.target as HTMLSelectElement).value)
+              setField("operation", (e.target as HTMLSelectElement).value)
             }
           >
-            {OPERACE_OPTIONS.map((o) => (
-              <s-option key={o.value} value={o.value}>
-                {o.label}
+            {OPERATION_OPTIONS.map((o) => (
+              <s-option key={o} value={o}>
+                {t(`operation.${o}`)}
               </s-option>
             ))}
           </s-select>
           <s-text-field
-            label="Hodnota"
-            name="hodnota"
-            value={form.hodnota}
+            label={t("field.value")}
+            name="value"
+            value={form.value}
             onChange={(e) =>
-              setField("hodnota", (e.target as HTMLInputElement).value)
+              setField("value", (e.target as HTMLInputElement).value)
             }
           />
           <s-text-field
-            label="Zaokrouhlení"
-            name="zaokrouhleni"
-            value={form.zaokrouhleni}
+            label={t("field.rounding")}
+            name="rounding"
+            value={form.rounding}
             onChange={(e) =>
-              setField("zaokrouhleni", (e.target as HTMLInputElement).value)
+              setField("rounding", (e.target as HTMLInputElement).value)
             }
           />
           <s-text-field
-            label="Pořadí"
-            name="poradi"
-            value={form.poradi}
+            label={t("field.position")}
+            name="position"
+            value={form.position}
             onChange={(e) =>
-              setField("poradi", (e.target as HTMLInputElement).value)
+              setField("position", (e.target as HTMLInputElement).value)
             }
           />
           <s-checkbox
-            label="Aktivní"
-            name="aktivni"
-            checked={form.aktivni === "true"}
+            label={t("field.active")}
+            name="active"
+            checked={form.active === "true"}
             onChange={(e) =>
               setField(
-                "aktivni",
+                "active",
                 (e.target as HTMLInputElement).checked ? "true" : "false",
               )
             }
@@ -337,53 +337,57 @@ export default function CenoveHladiny() {
               onClick={save}
               {...(isSubmitting ? { loading: true } : {})}
             >
-              {isEditing ? "Uložit změny" : "Vytvořit"}
+              {isEditing ? t("action.save") : t("action.create")}
             </s-button>
             {isEditing && (
               <s-button variant="tertiary" onClick={() => setForm(EMPTY_FORM)}>
-                Zrušit
+                {t("action.cancel")}
               </s-button>
             )}
           </s-stack>
         </s-stack>
       </s-section>
 
-      <s-section heading="Seznam cenových hladin">
-        {hladiny.length === 0 ? (
-          <s-paragraph>Zatím nejsou žádné cenové hladiny.</s-paragraph>
+      <s-section heading={t("priceLevels.listTitle")}>
+        {levels.length === 0 ? (
+          <s-paragraph>{t("priceLevels.empty")}</s-paragraph>
         ) : (
           <s-table>
             <s-table-header-row>
-              <s-table-header>Název</s-table-header>
-              <s-table-header>Kód</s-table-header>
-              <s-table-header>Základ</s-table-header>
-              <s-table-header>Operace</s-table-header>
-              <s-table-header>Hodnota</s-table-header>
-              <s-table-header>Aktivní</s-table-header>
-              <s-table-header>Akce</s-table-header>
+              <s-table-header>{t("field.name")}</s-table-header>
+              <s-table-header>{t("field.code")}</s-table-header>
+              <s-table-header>{t("field.base")}</s-table-header>
+              <s-table-header>{t("field.operation")}</s-table-header>
+              <s-table-header>{t("field.value")}</s-table-header>
+              <s-table-header>{t("field.active")}</s-table-header>
+              <s-table-header>{t("field.actions")}</s-table-header>
             </s-table-header-row>
             <s-table-body>
-              {hladiny.map((h) => (
-                <s-table-row key={h.id}>
-                  <s-table-cell>{h.fields.nazev || h.displayName}</s-table-cell>
-                  <s-table-cell>{h.fields.kod}</s-table-cell>
-                  <s-table-cell>{h.fields.zaklad}</s-table-cell>
-                  <s-table-cell>{h.fields.operace}</s-table-cell>
-                  <s-table-cell>{h.fields.hodnota}</s-table-cell>
+              {levels.map((level) => (
+                <s-table-row key={level.id}>
                   <s-table-cell>
-                    {h.fields.aktivni === "true" ? "Ano" : "Ne"}
+                    {level.fields.name || level.displayName}
+                  </s-table-cell>
+                  <s-table-cell>{level.fields.code}</s-table-cell>
+                  <s-table-cell>{level.fields.base}</s-table-cell>
+                  <s-table-cell>{level.fields.operation}</s-table-cell>
+                  <s-table-cell>{level.fields.value}</s-table-cell>
+                  <s-table-cell>
+                    {level.fields.active === "true"
+                      ? t("common.yes")
+                      : t("common.no")}
                   </s-table-cell>
                   <s-table-cell>
                     <s-stack direction="inline" gap="small-300">
-                      <s-button variant="tertiary" onClick={() => edit(h)}>
-                        Upravit
+                      <s-button variant="tertiary" onClick={() => edit(level)}>
+                        {t("action.edit")}
                       </s-button>
                       <s-button
                         variant="tertiary"
                         tone="critical"
-                        onClick={() => remove(h.id)}
+                        onClick={() => remove(level.id)}
                       >
-                        Smazat
+                        {t("action.delete")}
                       </s-button>
                     </s-stack>
                   </s-table-cell>

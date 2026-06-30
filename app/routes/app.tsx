@@ -4,27 +4,43 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate } from "../shopify.server";
+import { resolveLocale } from "../i18n";
+import { I18nProvider, useTranslation } from "../i18n/context";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
 
+  // Shopify passes the merchant locale via the `locale` query param to
+  // embedded apps (e.g. ?locale=cs-CZ). Default language is English.
+  const url = new URL(request.url);
+  const locale = resolveLocale(url.searchParams.get("locale"));
+
   // eslint-disable-next-line no-undef
-  return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+  return { apiKey: process.env.SHOPIFY_API_KEY || "", locale };
 };
 
+function Nav() {
+  const t = useTranslation();
+  return (
+    <s-app-nav>
+      <s-link href="/app">{t("nav.home")}</s-link>
+      <s-link href="/app/price-levels">{t("nav.priceLevels")}</s-link>
+      <s-link href="/app/price-lists">{t("nav.priceLists")}</s-link>
+      <s-link href="/app/hardstop">{t("nav.hardstop")}</s-link>
+      <s-link href="/app/additional">{t("nav.additional")}</s-link>
+    </s-app-nav>
+  );
+}
+
 export default function App() {
-  const { apiKey } = useLoaderData<typeof loader>();
+  const { apiKey, locale } = useLoaderData<typeof loader>();
 
   return (
     <AppProvider embedded apiKey={apiKey}>
-      <s-app-nav>
-        <s-link href="/app">Home</s-link>
-        <s-link href="/app/cenove-hladiny">Cenové hladiny</s-link>
-        <s-link href="/app/ceniky">Ceníky dodavatelů</s-link>
-        <s-link href="/app/hardstop">Hardstop pravidla</s-link>
-        <s-link href="/app/additional">Additional page</s-link>
-      </s-app-nav>
-      <Outlet />
+      <I18nProvider locale={locale}>
+        <Nav />
+        <Outlet />
+      </I18nProvider>
     </AppProvider>
   );
 }
