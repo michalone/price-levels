@@ -10,293 +10,291 @@ name = "price-levels"
 scopes = "write_products,write_metaobjects,write_metaobject_definitions,read_customers,read_companies,write_companies"
 
 # =====================================================================
-# Metaobjekty (app-owned) pro B2B cenotvorbu
+# Metaobjects (app-owned) for B2B pricing
 # =====================================================================
 
-# 1) Cenová hladina
-[metaobjects.app.cenova_hladina]
-name = "Cenová hladina"
-description = "Definice cenové hladiny (sloupce ceníku) pro B2B cenotvorbu"
-display_name_field = "nazev"
+# 1) Price level
+[metaobjects.app.price_level]
+name = "Price level"
+description = "Price level definition (price list column) for B2B pricing"
+display_name_field = "name"
 access.admin = "merchant_read_write"
 
-  [metaobjects.app.cenova_hladina.fields.nazev]
-  name = "Název"
+  [metaobjects.app.price_level.fields.name]
+  name = "Name"
   type = "single_line_text_field"
   required = true
 
-  [metaobjects.app.cenova_hladina.fields.kod]
-  name = "Kód"
+  [metaobjects.app.price_level.fields.code]
+  name = "Code"
   type = "single_line_text_field"
   required = true
 
-  [metaobjects.app.cenova_hladina.fields.zaklad]
-  name = "Základ"
+  [metaobjects.app.price_level.fields.base]
+  name = "Base"
   type = "single_line_text_field"
   required = true
   validations.choices = ["NC", "RRP"]
 
-  [metaobjects.app.cenova_hladina.fields.operace]
-  name = "Operace"
+  [metaobjects.app.price_level.fields.operation]
+  name = "Operation"
   type = "single_line_text_field"
   required = true
   validations.choices = ["plus_pct", "minus_pct", "plus_eur"]
 
-  [metaobjects.app.cenova_hladina.fields.hodnota]
-  name = "Hodnota"
+  [metaobjects.app.price_level.fields.value]
+  name = "Value"
   type = "number_decimal"
   required = true
 
-  [metaobjects.app.cenova_hladina.fields.zaokrouhleni]
-  name = "Zaokrouhlení"
+  [metaobjects.app.price_level.fields.rounding]
+  name = "Rounding"
   type = "number_decimal"
 
-  [metaobjects.app.cenova_hladina.fields.poradi]
-  name = "Pořadí"
+  [metaobjects.app.price_level.fields.position]
+  name = "Position"
   type = "number_integer"
 
-  [metaobjects.app.cenova_hladina.fields.aktivni]
-  name = "Aktivní"
+  [metaobjects.app.price_level.fields.active]
+  name = "Active"
   type = "boolean"
 
 # 2) Partner
 [metaobjects.app.partner]
 name = "Partner"
-description = "Obchodní partner (dodavatel / odběratel)"
-display_name_field = "nazev"
+description = "Business partner (supplier / buyer)"
+display_name_field = "name"
 access.admin = "merchant_read_write"
 
-  [metaobjects.app.partner.fields.nazev]
-  name = "Název"
+  [metaobjects.app.partner.fields.name]
+  name = "Name"
   type = "single_line_text_field"
   required = true
 
-  [metaobjects.app.partner.fields.typ]
-  name = "Typ"
+  [metaobjects.app.partner.fields.type]
+  name = "Type"
   type = "single_line_text_field"
   required = true
-  validations.choices = ["dodavatel", "odberatel", "oboji"]
+  validations.choices = ["supplier", "buyer", "both"]
 
   [metaobjects.app.partner.fields.ico]
-  name = "IČO"
+  name = "Company ID (IČO)"
   type = "single_line_text_field"
 
   [metaobjects.app.partner.fields.dic]
-  name = "DIČ"
+  name = "Tax ID (DIČ)"
   type = "single_line_text_field"
 
-  [metaobjects.app.partner.fields.ic_dph]
-  name = "IČ DPH"
+  [metaobjects.app.partner.fields.vat_id]
+  name = "VAT ID"
   type = "single_line_text_field"
 
-  [metaobjects.app.partner.fields.id_pohoda]
-  name = "ID Pohoda"
+  [metaobjects.app.partner.fields.pohoda_id]
+  name = "Pohoda ID"
   type = "single_line_text_field"
 
-  [metaobjects.app.partner.fields.vlastni_cenova_hladina]
-  name = "Vlastní cenová hladina"
+  [metaobjects.app.partner.fields.own_price_level]
+  name = "Own price level"
   type = "boolean"
 
   [metaobjects.app.partner.fields.company_ref]
   name = "Company"
   type = "company_reference"
 
-  [metaobjects.app.partner.fields.okno_zavoz]
-  name = "Okno závozu"
+  [metaobjects.app.partner.fields.delivery_window]
+  name = "Delivery window"
   type = "single_line_text_field"
 
-  [metaobjects.app.partner.fields.nakladka]
-  name = "Nakládka"
+  [metaobjects.app.partner.fields.loading]
+  name = "Loading"
   type = "single_line_text_field"
 
-# 3) Ceník dodavatele
-[metaobjects.app.cenik_dodavatele]
-name = "Ceník dodavatele"
-description = "Nákupní ceník konkrétního dodavatele a navázané cenové hladiny"
-display_name_field = "nazev"
+# 3) Supplier price list
+[metaobjects.app.supplier_price_list]
+name = "Supplier price list"
+description = "Purchase price list of a supplier and linked price levels"
+display_name_field = "name"
 access.admin = "merchant_read_write"
 
-  [metaobjects.app.cenik_dodavatele.fields.nazev]
-  name = "Název"
+  [metaobjects.app.supplier_price_list.fields.name]
+  name = "Name"
   type = "single_line_text_field"
   required = true
 
-  [metaobjects.app.cenik_dodavatele.fields.dodavatel]
-  name = "Dodavatel"
+  [metaobjects.app.supplier_price_list.fields.supplier]
+  name = "Supplier"
   type = "metaobject_reference<$app:partner>"
   required = true
 
-  [metaobjects.app.cenik_dodavatele.fields.sloupce]
-  name = "Sloupce (cenové hladiny)"
-  type = "list.metaobject_reference<$app:cenova_hladina>"
+  [metaobjects.app.supplier_price_list.fields.columns]
+  name = "Columns (price levels)"
+  type = "list.metaobject_reference<$app:price_level>"
   required = true
 
-  [metaobjects.app.cenik_dodavatele.fields.zdrojovy_feed]
-  name = "Zdrojový feed"
+  [metaobjects.app.supplier_price_list.fields.source_feed]
+  name = "Source feed"
   type = "single_line_text_field"
 
-  [metaobjects.app.cenik_dodavatele.fields.platnost_od]
-  name = "Platnost od"
+  [metaobjects.app.supplier_price_list.fields.valid_from]
+  name = "Valid from"
   type = "date"
 
-  [metaobjects.app.cenik_dodavatele.fields.platnost_do]
-  name = "Platnost do"
+  [metaobjects.app.supplier_price_list.fields.valid_to]
+  name = "Valid to"
   type = "date"
 
-# 4) Individuální cena
-[metaobjects.app.individualni_cena]
-name = "Individuální cena"
-description = "Individuální cena pro konkrétního zákazníka a variantu"
+# 4) Individual price
+[metaobjects.app.individual_price]
+name = "Individual price"
+description = "Individual price for a specific customer and variant"
 access.admin = "merchant_read_write"
 
-  [metaobjects.app.individualni_cena.fields.zakaznik]
-  name = "Zákazník"
+  [metaobjects.app.individual_price.fields.customer]
+  name = "Customer"
   type = "company_reference"
   required = true
 
-  [metaobjects.app.individualni_cena.fields.variant]
-  name = "Varianta"
+  [metaobjects.app.individual_price.fields.variant]
+  name = "Variant"
   type = "variant_reference"
   required = true
 
-  [metaobjects.app.individualni_cena.fields.cena]
-  name = "Cena"
+  [metaobjects.app.individual_price.fields.price]
+  name = "Price"
   type = "money"
   required = true
 
-  [metaobjects.app.individualni_cena.fields.typ]
-  name = "Typ"
+  [metaobjects.app.individual_price.fields.type]
+  name = "Type"
   type = "single_line_text_field"
-  validations.choices = ["pevna", "marze_eur", "hardstop_vyjimka"]
+  validations.choices = ["fixed", "margin_eur", "hardstop_exception"]
 
-  [metaobjects.app.individualni_cena.fields.platnost_od]
-  name = "Platnost od"
+  [metaobjects.app.individual_price.fields.valid_from]
+  name = "Valid from"
   type = "date"
 
-  [metaobjects.app.individualni_cena.fields.platnost_do]
-  name = "Platnost do"
+  [metaobjects.app.individual_price.fields.valid_to]
+  name = "Valid to"
   type = "date"
 
-  [metaobjects.app.individualni_cena.fields.duvod]
-  name = "Důvod"
+  [metaobjects.app.individual_price.fields.reason]
+  name = "Reason"
   type = "single_line_text_field"
 
-# 5) Hardstop pravidlo
-[metaobjects.app.hardstop_pravidlo]
-name = "Hardstop pravidlo"
-description = "Pravidlo pro tvrdé limity cenotvorby (blokace / snížení / skrytí)"
-display_name_field = "nazev"
+# 5) Hardstop rule
+[metaobjects.app.hardstop_rule]
+name = "Hardstop rule"
+description = "Hard price limit rule (block / lower / hide)"
+display_name_field = "name"
 access.admin = "merchant_read_write"
 
-  [metaobjects.app.hardstop_pravidlo.fields.nazev]
-  name = "Název"
+  [metaobjects.app.hardstop_rule.fields.name]
+  name = "Name"
   type = "single_line_text_field"
   required = true
 
-  [metaobjects.app.hardstop_pravidlo.fields.podminka]
-  name = "Podmínka"
+  [metaobjects.app.hardstop_rule.fields.condition]
+  name = "Condition"
   type = "single_line_text_field"
   required = true
 
-  [metaobjects.app.hardstop_pravidlo.fields.akce]
-  name = "Akce"
+  [metaobjects.app.hardstop_rule.fields.action]
+  name = "Action"
   type = "single_line_text_field"
   required = true
-  validations.choices = ["blok", "nizsi", "skryt"]
+  validations.choices = ["block", "lower", "hide"]
 
-  [metaobjects.app.hardstop_pravidlo.fields.vyjimka_v_nabidce]
-  name = "Výjimka v nabídce"
+  [metaobjects.app.hardstop_rule.fields.exception_in_quote]
+  name = "Exception in quote"
   type = "boolean"
 
-  [metaobjects.app.hardstop_pravidlo.fields.aktivni]
-  name = "Aktivní"
+  [metaobjects.app.hardstop_rule.fields.active]
+  name = "Active"
   type = "boolean"
 
-# 6) Audit ceny
-[metaobjects.app.cena_audit]
-name = "Audit ceny"
-description = "Auditní záznam o změně ceny / cenové entity"
+# 6) Price audit
+[metaobjects.app.price_audit]
+name = "Price audit"
+description = "Audit record of a price / pricing entity change"
 access.admin = "merchant_read_write"
 
-  [metaobjects.app.cena_audit.fields.entita]
-  name = "Entita"
+  [metaobjects.app.price_audit.fields.entity]
+  name = "Entity"
   type = "single_line_text_field"
   required = true
-  validations.choices = ["hladina", "cenik", "indiv", "nabidka"]
+  validations.choices = ["level", "price_list", "individual", "quote"]
 
-  [metaobjects.app.cena_audit.fields.entita_ref]
-  name = "Reference entity"
+  [metaobjects.app.price_audit.fields.entity_ref]
+  name = "Entity reference"
   type = "single_line_text_field"
 
-  [metaobjects.app.cena_audit.fields.stara_hodnota]
-  name = "Stará hodnota"
+  [metaobjects.app.price_audit.fields.old_value]
+  name = "Old value"
   type = "single_line_text_field"
 
-  [metaobjects.app.cena_audit.fields.nova_hodnota]
-  name = "Nová hodnota"
+  [metaobjects.app.price_audit.fields.new_value]
+  name = "New value"
   type = "single_line_text_field"
 
-  [metaobjects.app.cena_audit.fields.zmenil]
-  name = "Změnil"
+  [metaobjects.app.price_audit.fields.changed_by]
+  name = "Changed by"
   type = "single_line_text_field"
 
-  [metaobjects.app.cena_audit.fields.datum]
-  name = "Datum"
+  [metaobjects.app.price_audit.fields.date]
+  name = "Date"
   type = "date_time"
   required = true
 
 # =====================================================================
-# Metafield definice (app-owned)
-# Pozn.: deklarativní config umisťuje app metafieldy do rezervovaného
-# namespace "app" ($app). Logické namespace cena./feed. ze specifikace
-# se mapují na klíče pod $app (GraphQL: namespace "$app", key níže).
+# Metafield definitions (app-owned)
+# Namespaces "pricing" / "feed" as required by the spec.
 # =====================================================================
 
 # --- Company ---
-[company.metafields.app.vychozi_hladina]
-name = "Výchozí cenová hladina"
-type = "metaobject_reference<$app:cenova_hladina>"
-description = "Výchozí cenová hladina pro danou společnost"
+[company.metafields.pricing.default_level]
+name = "Default price level"
+type = "metaobject_reference<$app:price_level>"
+description = "Default price level for the company"
 access.admin = "merchant_read_write"
 
-[company.metafields.app.pravidla]
-name = "Cenová pravidla"
-type = "list.metaobject_reference<$app:cenova_hladina>"
-description = "Seznam cenových hladin / pravidel platných pro společnost"
+[company.metafields.pricing.rules]
+name = "Pricing rules"
+type = "list.metaobject_reference<$app:price_level>"
+description = "List of price levels / rules valid for the company"
 access.admin = "merchant_read_write"
 
-[company.metafields.app.doprava_zdarma]
-name = "Doprava zdarma"
+[company.metafields.pricing.free_shipping]
+name = "Free shipping"
 type = "boolean"
-description = "Příznak dopravy zdarma pro společnost"
+description = "Free shipping flag for the company"
 access.admin = "merchant_read_write"
 
 # --- ProductVariant ---
-# Pozn.: CLI může při deploy varianta-metafield bloky ignorovat; v takovém
-# případě je nutná runtime registrace přes metafieldDefinitionCreate.
-[variant.metafields.app.nc]
-name = "Nákupní cena (NC)"
+# Note: the CLI may ignore variant metafield blocks on deploy; in that case
+# runtime registration via metafieldDefinitionCreate is required.
+[variant.metafields.pricing.cost]
+name = "Cost (NC)"
 type = "money"
-description = "Nákupní cena varianty"
+description = "Purchase cost of the variant"
 access.admin = "merchant_read_write"
 
-[variant.metafields.app.rrp]
-name = "Doporučená cena (RRP)"
+[variant.metafields.pricing.rrp]
+name = "RRP"
 type = "money"
-description = "Doporučená maloobchodní cena varianty"
+description = "Recommended retail price of the variant"
 access.admin = "merchant_read_write"
 
-[variant.metafields.app.dodavatel]
-name = "Dodavatel"
+[variant.metafields.pricing.supplier]
+name = "Supplier"
 type = "metaobject_reference<$app:partner>"
-description = "Dodavatel dané varianty"
+description = "Supplier of the variant"
 access.admin = "merchant_read_write"
 
 # --- Product ---
-[product.metafields.app.zamky]
-name = "Zámky feedu"
+[product.metafields.feed.locks]
+name = "Feed locks"
 type = "json"
-description = "Zámky polí proti přepisu importním feedem"
+description = "Field locks to prevent overwriting by an import feed"
 access.admin = "merchant_read_write"
 
 [webhooks]
