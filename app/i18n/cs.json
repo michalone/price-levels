@@ -33,8 +33,8 @@
   "field.exceptionInQuote": "Výjimka v nabídce",
   "field.actions": "Akce",
 
-  "base.NC": "NC (nákupní cena)",
-  "base.RRP": "RRP (doporučená cena)",
+  "base.cost": "Nákupní cena (NC)",
+  "base.rrp": "RRP (doporučená cena)",
   "operation.plus_pct": "+ %",
   "operation.minus_pct": "− %",
   "operation.plus_eur": "+ EUR",

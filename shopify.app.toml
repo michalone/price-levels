@@ -34,7 +34,7 @@ access.admin = "merchant_read_write"
   name = "Base"
   type = "single_line_text_field"
   required = true
-  validations.choices = ["NC", "RRP"]
+  validations.choices = ["cost", "rrp"]
 
   [metaobjects.app.price_level.fields.operation]
   name = "Operation"

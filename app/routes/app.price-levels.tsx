@@ -164,14 +164,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return { ok: errors.length === 0, errors };
 };
 
-const BASE_OPTIONS = ["NC", "RRP"] as const;
+const BASE_OPTIONS = ["cost", "rrp"] as const;
 const OPERATION_OPTIONS = ["plus_pct", "minus_pct", "plus_eur"] as const;
 
 const EMPTY_FORM: FieldMap = {
   id: "",
   name: "",
   code: "",
-  base: "NC",
+  base: "cost",
   operation: "plus_pct",
   value: "",
   rounding: "",
@@ -222,7 +222,7 @@ export default function PriceLevels() {
       id: level.id,
       name: level.fields.name ?? "",
       code: level.fields.code ?? "",
-      base: level.fields.base || "NC",
+      base: level.fields.base || "cost",
       operation: level.fields.operation || "plus_pct",
       value: level.fields.value ?? "",
       rounding: level.fields.rounding ?? "",
