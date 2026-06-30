@@ -1,0 +1,20 @@
+api_version = "2025-04"
+
+[[extensions]]
+name = "Cenová hladina (B2B)"
+handle = "cenova-hladina-block"
+type = "ui_extension"
+
+  [[extensions.targeting]]
+  # Target musí odpovídat targetu použitému v modulu (./src/BlockExtension.tsx).
+  module = "./src/BlockExtension.tsx"
+  target = "admin.customer-details.block.render"
+
+# Platné admin block targety (API 2025-04):
+# - admin.abandoned-checkout-details.block.render
+# - admin.collection-details.block.render
+# - admin.customer-details.block.render
+# - admin.draft-order-details.block.render
+# - admin.order-details.block.render
+# - admin.product-details.block.render
+# - admin.product-variant-details.block.render
