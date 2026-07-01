@@ -1,361 +1,260 @@
-import { useEffect } from "react";
-import type {
-  ActionFunctionArgs,
-  HeadersFunction,
-  LoaderFunctionArgs,
-} from "react-router";
-import { useFetcher } from "react-router";
-import { useAppBridge } from "@shopify/app-bridge-react";
-import { authenticate } from "../shopify.server";
+import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
+import { authenticate } from "../shopify.server";
+import { useTranslation } from "../i18n/context";
+
+const PRICE_LEVEL_TYPE = "$app:price_level";
+const PRICE_LIST_TYPE = "$app:supplier_price_list";
+const HARDSTOP_TYPE = "$app:hardstop_rule";
+
+interface MetaobjectNode {
+  id: string;
+  displayName: string;
+  fields: Array<{ key: string; value: string | null }>;
+}
+
+interface MetaobjectConnection {
+  edges: Array<{ node: MetaobjectNode }>;
+}
+
+interface OverviewResponse {
+  data?: {
+    priceLevels?: MetaobjectConnection;
+    priceLists?: MetaobjectConnection;
+    hardstops?: MetaobjectConnection;
+  };
+}
+
+interface PriceLevelOverviewRow {
+  id: string;
+  name: string;
+  code: string;
+  active: boolean;
+}
+
+interface PriceListOverviewRow {
+  id: string;
+  name: string;
+  supplier: string;
+  validFrom: string;
+  validTo: string;
+}
+
+interface HardstopOverviewRow {
+  id: string;
+  name: string;
+  condition: string;
+  action: string;
+  active: boolean;
+}
+
+function toFieldsMap(fields: Array<{ key: string; value: string | null }>) {
+  const mapped: Record<string, string> = {};
+  for (const field of fields) {
+    mapped[field.key] = field.value ?? "";
+  }
+  return mapped;
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-
-  return null;
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
-  const color = ["Red", "Orange", "Yellow", "Green"][
-    Math.floor(Math.random() * 4)
-  ];
   const response = await admin.graphql(
     `#graphql
-      mutation populateProduct($product: ProductCreateInput!) {
-        productCreate(product: $product) {
-          product {
+    query PriceOverview(
+      $priceLevelType: String!
+      $priceListType: String!
+      $hardstopType: String!
+    ) {
+      priceLevels: metaobjects(type: $priceLevelType, first: 100) {
+        edges {
+          node {
             id
-            title
-            handle
-            status
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
-            }
-            demoInfo: metafield(namespace: "$app", key: "demo_info") {
-              jsonValue
+            displayName
+            fields {
+              key
+              value
             }
           }
         }
-      }`,
-    {
-      variables: {
-        product: {
-          title: `${color} Snowboard`,
-          metafields: [
-            {
-              namespace: "$app",
-              key: "demo_info",
-              value: "Created by React Router Template",
-            },
-          ],
-        },
-      },
-    },
-  );
-  const responseJson = await response.json();
-
-  const product = responseJson.data!.productCreate!.product!;
-  const variantId = product.variants.edges[0]!.node!.id!;
-
-  const variantResponse = await admin.graphql(
-    `#graphql
-    mutation shopifyReactRouterTemplateUpdateVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
-      productVariantsBulkUpdate(productId: $productId, variants: $variants) {
-        productVariants {
-          id
-          price
-          barcode
-          createdAt
+      }
+      priceLists: metaobjects(type: $priceListType, first: 100) {
+        edges {
+          node {
+            id
+            displayName
+            fields {
+              key
+              value
+            }
+          }
+        }
+      }
+      hardstops: metaobjects(type: $hardstopType, first: 100) {
+        edges {
+          node {
+            id
+            displayName
+            fields {
+              key
+              value
+            }
+          }
         }
       }
     }`,
     {
       variables: {
-        productId: product.id,
-        variants: [{ id: variantId, price: "100.00" }],
+        priceLevelType: PRICE_LEVEL_TYPE,
+        priceListType: PRICE_LIST_TYPE,
+        hardstopType: HARDSTOP_TYPE,
       },
     },
   );
 
-  const variantResponseJson = await variantResponse.json();
+  const json = (await response.json()) as OverviewResponse;
 
-  const metaobjectResponse = await admin.graphql(
-    `#graphql
-    mutation shopifyReactRouterTemplateUpsertMetaobject($handle: MetaobjectHandleInput!, $metaobject: MetaobjectUpsertInput!) {
-      metaobjectUpsert(handle: $handle, metaobject: $metaobject) {
-        metaobject {
-          id
-          handle
-          title: field(key: "title") {
-            jsonValue
-          }
-          description: field(key: "description") {
-            jsonValue
-          }
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }`,
-    {
-      variables: {
-        handle: {
-          type: "$app:example",
-          handle: "demo-entry",
-        },
-        metaobject: {
-          fields: [
-            { key: "title", value: "Demo Entry" },
-            {
-              key: "description",
-              value:
-                "This metaobject was created by the Shopify app template to demonstrate the metaobject API.",
-            },
-          ],
-        },
-      },
-    },
-  );
+  const priceLevels: PriceLevelOverviewRow[] =
+    json.data?.priceLevels?.edges.map(({ node }) => {
+      const fields = toFieldsMap(node.fields);
+      return {
+        id: node.id,
+        name: fields.name || node.displayName,
+        code: fields.code ?? "",
+        active: fields.active === "true",
+      };
+    }) ?? [];
 
-  const metaobjectResponseJson = await metaobjectResponse.json();
+  const priceLists: PriceListOverviewRow[] =
+    json.data?.priceLists?.edges.map(({ node }) => {
+      const fields = toFieldsMap(node.fields);
+      return {
+        id: node.id,
+        name: fields.name || node.displayName,
+        supplier: fields.supplier ?? "",
+        validFrom: fields.valid_from ?? "",
+        validTo: fields.valid_to ?? "",
+      };
+    }) ?? [];
 
-  return {
-    product: responseJson!.data!.productCreate!.product,
-    variant:
-      variantResponseJson!.data!.productVariantsBulkUpdate!.productVariants,
-    metaobject:
-      metaobjectResponseJson!.data!.metaobjectUpsert!.metaobject,
-  };
+  const hardstops: HardstopOverviewRow[] =
+    json.data?.hardstops?.edges.map(({ node }) => {
+      const fields = toFieldsMap(node.fields);
+      return {
+        id: node.id,
+        name: fields.name || node.displayName,
+        condition: fields.condition ?? "",
+        action: fields.action ?? "",
+        active: fields.active === "true",
+      };
+    }) ?? [];
+
+  return { priceLevels, priceLists, hardstops };
 };
 
 export default function Index() {
-  const fetcher = useFetcher<typeof action>();
-
-  const shopify = useAppBridge();
-  const isLoading =
-    ["loading", "submitting"].includes(fetcher.state) &&
-    fetcher.formMethod === "POST";
-
-  useEffect(() => {
-    if (fetcher.data?.product?.id) {
-      shopify.toast.show("Product created");
-    }
-  }, [fetcher.data?.product?.id, shopify]);
-
-  const generateProduct = () => fetcher.submit({}, { method: "POST" });
+  const { priceLevels, priceLists, hardstops } = useLoaderData<typeof loader>();
+  const t = useTranslation();
 
   return (
-    <s-page heading="Shopify app template">
-      <s-button slot="primary-action" onClick={generateProduct}>
-        Generate a product
-      </s-button>
-
-      <s-section heading="Congrats on creating a new Shopify app 🎉">
-        <s-paragraph>
-          This embedded app template uses{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/tools/app-bridge"
-            target="_blank"
-          >
-            App Bridge
-          </s-link>{" "}
-          interface examples like an{" "}
-          <s-link href="/app/additional">additional page in the app nav</s-link>
-          , as well as an{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            Admin GraphQL
-          </s-link>{" "}
-          mutation demo, to provide a starting point for app development.
-        </s-paragraph>
-      </s-section>
-      <s-section heading="Get started with products">
-        <s-paragraph>
-          Generate a product with GraphQL and get the JSON output for that
-          product. Learn more about the{" "}
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql/latest/mutations/productCreate"
-            target="_blank"
-          >
-            productCreate
-          </s-link>{" "}
-          mutation in our API references. Includes a product{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data/metafields"
-            target="_blank"
-          >
-            metafield
-          </s-link>{" "}
-          and{" "}
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data/metaobjects"
-            target="_blank"
-          >
-            metaobject
-          </s-link>
-          .
-        </s-paragraph>
-        <s-stack direction="inline" gap="base">
-          <s-button
-            onClick={generateProduct}
-            {...(isLoading ? { loading: true } : {})}
-          >
-            Generate a product
-          </s-button>
-          {fetcher.data?.product && (
-            <s-button
-              onClick={() => {
-                shopify.intents.invoke?.("edit:shopify/Product", {
-                  value: fetcher.data?.product?.id,
-                });
-              }}
-              target="_blank"
-              variant="tertiary"
-            >
-              Edit product
-            </s-button>
-          )}
-        </s-stack>
-        {fetcher.data?.product && (
-          <s-section heading="productCreate mutation">
-            <s-stack direction="block" gap="base">
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  <code>{JSON.stringify(fetcher.data.product, null, 2)}</code>
-                </pre>
-              </s-box>
-
-              <s-heading>productVariantsBulkUpdate mutation</s-heading>
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  <code>{JSON.stringify(fetcher.data.variant, null, 2)}</code>
-                </pre>
-              </s-box>
-
-              <s-heading>metaobjectUpsert mutation</s-heading>
-              <s-box
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-                background="subdued"
-              >
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  <code>
-                    {JSON.stringify(fetcher.data.metaobject, null, 2)}
-                  </code>
-                </pre>
-              </s-box>
-            </s-stack>
-          </s-section>
+    <s-page heading={t("home.title")}>
+      <s-section heading={t("home.priceLevelsTitle")}>
+        <s-paragraph>{t("home.priceLevelsIntro")}</s-paragraph>
+        {priceLevels.length === 0 ? (
+          <s-paragraph>{t("priceLevels.empty")}</s-paragraph>
+        ) : (
+          <s-table>
+            <s-table-header-row>
+              <s-table-header>{t("field.name")}</s-table-header>
+              <s-table-header>{t("field.code")}</s-table-header>
+              <s-table-header>{t("field.active")}</s-table-header>
+            </s-table-header-row>
+            <s-table-body>
+              {priceLevels.map((row) => (
+                <s-table-row key={row.id}>
+                  <s-table-cell>
+                    <s-link href={`/app/price-levels?edit=${encodeURIComponent(row.id)}`}>
+                      {row.name}
+                    </s-link>
+                  </s-table-cell>
+                  <s-table-cell>{row.code}</s-table-cell>
+                  <s-table-cell>
+                    {row.active ? t("common.yes") : t("common.no")}
+                  </s-table-cell>
+                </s-table-row>
+              ))}
+            </s-table-body>
+          </s-table>
         )}
       </s-section>
 
-      <s-section slot="aside" heading="App template specs">
-        <s-paragraph>
-          <s-text>Framework: </s-text>
-          <s-link href="https://reactrouter.com/" target="_blank">
-            React Router
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Interface: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/app-home/using-polaris-components"
-            target="_blank"
-          >
-            Polaris web components
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>API: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/api/admin-graphql"
-            target="_blank"
-          >
-            GraphQL
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Custom data: </s-text>
-          <s-link
-            href="https://shopify.dev/docs/apps/build/custom-data"
-            target="_blank"
-          >
-            Metafields &amp; metaobjects
-          </s-link>
-        </s-paragraph>
-        <s-paragraph>
-          <s-text>Database: </s-text>
-          <s-link href="https://www.prisma.io/" target="_blank">
-            Prisma
-          </s-link>
-        </s-paragraph>
+      <s-section heading={t("home.priceListsTitle")}>
+        <s-paragraph>{t("home.priceListsIntro")}</s-paragraph>
+        {priceLists.length === 0 ? (
+          <s-paragraph>{t("priceLists.empty")}</s-paragraph>
+        ) : (
+          <s-table>
+            <s-table-header-row>
+              <s-table-header>{t("field.name")}</s-table-header>
+              <s-table-header>{t("field.supplier")}</s-table-header>
+              <s-table-header>{t("field.validFrom")}</s-table-header>
+              <s-table-header>{t("field.validTo")}</s-table-header>
+            </s-table-header-row>
+            <s-table-body>
+              {priceLists.map((row) => (
+                <s-table-row key={row.id}>
+                  <s-table-cell>
+                    <s-link href={`/app/price-lists?edit=${encodeURIComponent(row.id)}`}>
+                      {row.name}
+                    </s-link>
+                  </s-table-cell>
+                  <s-table-cell>{row.supplier}</s-table-cell>
+                  <s-table-cell>{row.validFrom}</s-table-cell>
+                  <s-table-cell>{row.validTo}</s-table-cell>
+                </s-table-row>
+              ))}
+            </s-table-body>
+          </s-table>
+        )}
       </s-section>
 
-      <s-section slot="aside" heading="Next steps">
-        <s-unordered-list>
-          <s-list-item>
-            Build an{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/getting-started/build-app-example"
-              target="_blank"
-            >
-              example app
-            </s-link>
-          </s-list-item>
-          <s-list-item>
-            Explore Shopify&apos;s API with{" "}
-            <s-link
-              href="https://shopify.dev/docs/apps/tools/graphiql-admin-api"
-              target="_blank"
-            >
-              GraphiQL
-            </s-link>
-          </s-list-item>
-        </s-unordered-list>
+      <s-section heading={t("home.hardstopsTitle")}>
+        <s-paragraph>{t("home.hardstopsIntro")}</s-paragraph>
+        {hardstops.length === 0 ? (
+          <s-paragraph>{t("hardstop.empty")}</s-paragraph>
+        ) : (
+          <s-table>
+            <s-table-header-row>
+              <s-table-header>{t("field.name")}</s-table-header>
+              <s-table-header>{t("field.condition")}</s-table-header>
+              <s-table-header>{t("field.action")}</s-table-header>
+              <s-table-header>{t("field.active")}</s-table-header>
+            </s-table-header-row>
+            <s-table-body>
+              {hardstops.map((row) => (
+                <s-table-row key={row.id}>
+                  <s-table-cell>
+                    <s-link href={`/app/hardstop?edit=${encodeURIComponent(row.id)}`}>
+                      {row.name}
+                    </s-link>
+                  </s-table-cell>
+                  <s-table-cell>{row.condition}</s-table-cell>
+                  <s-table-cell>{row.action}</s-table-cell>
+                  <s-table-cell>
+                    {row.active ? t("common.yes") : t("common.no")}
+                  </s-table-cell>
+                </s-table-row>
+              ))}
+            </s-table-body>
+          </s-table>
+        )}
       </s-section>
     </s-page>
   );
+}
+
+export function ErrorBoundary() {
+  return boundary.error(useRouteError());
 }
 
 export const headers: HeadersFunction = (headersArgs) => {

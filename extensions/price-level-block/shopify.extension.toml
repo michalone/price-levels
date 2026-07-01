@@ -1,4 +1,4 @@
-api_version = "2025-04"
+api_version = "2025-07"
 
 [[extensions]]
 name = "t:title"
@@ -12,7 +12,7 @@ type = "ui_extension"
   module = "./src/BlockExtension.tsx"
   target = "admin.customer-details.block.render"
 
-# Platné admin block targety (API 2025-04):
+# Platné admin block targety (API 2025-07):
 # - admin.abandoned-checkout-details.block.render
 # - admin.collection-details.block.render
 # - admin.customer-details.block.render

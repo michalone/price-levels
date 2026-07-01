@@ -174,7 +174,7 @@ function App() {
               onChange={(value: string) => setSelected(value)}
               options={[
                 { value: "", label: i18n.translate("none") },
-                ...levels.map((l) => ({ value: l.id, label: l.label })),
+                ...levels.map((level) => ({ value: level.id, label: level.label })),
               ]}
             />
             <Button variant="primary" disabled={saving} onClick={save}>

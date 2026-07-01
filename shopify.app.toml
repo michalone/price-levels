@@ -1,13 +1,24 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "223990817095a461e5090b95d56c4496"
-application_url = "https://example.com"
+application_url = "https://roy-lay-wendy-robots.trycloudflare.com"
 embedded = true
-name = "price-levels"
+name = "Price Levels"
+handle = "nvr-price-levels"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products,write_metaobjects,write_metaobject_definitions,read_customers,read_companies,write_companies"
+
+[auth]
+redirect_urls = [
+  "http://localhost:3000/auth/callback",
+  "http://localhost:3000/auth/shopify/callback",
+  "http://localhost:3000/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-10"
 
 # =====================================================================
 # Metaobjects (app-owned) for B2B pricing
@@ -40,7 +51,7 @@ access.admin = "merchant_read_write"
   name = "Operation"
   type = "single_line_text_field"
   required = true
-  validations.choices = ["plus_pct", "minus_pct", "plus_eur"]
+  validations.choices = ["plus_pct", "minus_pct", "plus_eur", "equal_to"]
 
   [metaobjects.app.price_level.fields.value]
   name = "Value"
@@ -59,57 +70,7 @@ access.admin = "merchant_read_write"
   name = "Active"
   type = "boolean"
 
-# 2) Partner
-[metaobjects.app.partner]
-name = "Partner"
-description = "Business partner (supplier / buyer)"
-display_name_field = "name"
-access.admin = "merchant_read_write"
-
-  [metaobjects.app.partner.fields.name]
-  name = "Name"
-  type = "single_line_text_field"
-  required = true
-
-  [metaobjects.app.partner.fields.type]
-  name = "Type"
-  type = "single_line_text_field"
-  required = true
-  validations.choices = ["supplier", "buyer", "both"]
-
-  [metaobjects.app.partner.fields.ico]
-  name = "Company ID (IČO)"
-  type = "single_line_text_field"
-
-  [metaobjects.app.partner.fields.dic]
-  name = "Tax ID (DIČ)"
-  type = "single_line_text_field"
-
-  [metaobjects.app.partner.fields.vat_id]
-  name = "VAT ID"
-  type = "single_line_text_field"
-
-  [metaobjects.app.partner.fields.pohoda_id]
-  name = "Pohoda ID"
-  type = "single_line_text_field"
-
-  [metaobjects.app.partner.fields.own_price_level]
-  name = "Own price level"
-  type = "boolean"
-
-  [metaobjects.app.partner.fields.company_ref]
-  name = "Company"
-  type = "company_reference"
-
-  [metaobjects.app.partner.fields.delivery_window]
-  name = "Delivery window"
-  type = "single_line_text_field"
-
-  [metaobjects.app.partner.fields.loading]
-  name = "Loading"
-  type = "single_line_text_field"
-
-# 3) Supplier price list
+# 2) Supplier price list
 [metaobjects.app.supplier_price_list]
 name = "Supplier price list"
 description = "Purchase price list of a supplier and linked price levels"
@@ -123,7 +84,7 @@ access.admin = "merchant_read_write"
 
   [metaobjects.app.supplier_price_list.fields.supplier]
   name = "Supplier"
-  type = "metaobject_reference<$app:partner>"
+  type = "company_reference"
   required = true
 
   [metaobjects.app.supplier_price_list.fields.columns]
@@ -143,45 +104,7 @@ access.admin = "merchant_read_write"
   name = "Valid to"
   type = "date"
 
-# 4) Individual price
-[metaobjects.app.individual_price]
-name = "Individual price"
-description = "Individual price for a specific customer and variant"
-access.admin = "merchant_read_write"
-
-  [metaobjects.app.individual_price.fields.customer]
-  name = "Customer"
-  type = "company_reference"
-  required = true
-
-  [metaobjects.app.individual_price.fields.variant]
-  name = "Variant"
-  type = "variant_reference"
-  required = true
-
-  [metaobjects.app.individual_price.fields.price]
-  name = "Price"
-  type = "money"
-  required = true
-
-  [metaobjects.app.individual_price.fields.type]
-  name = "Type"
-  type = "single_line_text_field"
-  validations.choices = ["fixed", "margin_eur", "hardstop_exception"]
-
-  [metaobjects.app.individual_price.fields.valid_from]
-  name = "Valid from"
-  type = "date"
-
-  [metaobjects.app.individual_price.fields.valid_to]
-  name = "Valid to"
-  type = "date"
-
-  [metaobjects.app.individual_price.fields.reason]
-  name = "Reason"
-  type = "single_line_text_field"
-
-# 5) Hardstop rule
+# 3) Hardstop rule
 [metaobjects.app.hardstop_rule]
 name = "Hardstop rule"
 description = "Hard price limit rule (block / lower / hide)"
@@ -245,72 +168,10 @@ access.admin = "merchant_read_write"
   type = "date_time"
   required = true
 
+[build]
+automatically_update_urls_on_dev = true
+
 # =====================================================================
 # Metafield definitions (app-owned)
 # Namespaces "pricing" / "feed" as required by the spec.
-# =====================================================================
-
-# --- Company ---
-[company.metafields.pricing.default_level]
-name = "Default price level"
-type = "metaobject_reference<$app:price_level>"
-description = "Default price level for the company"
-access.admin = "merchant_read_write"
-
-[company.metafields.pricing.rules]
-name = "Pricing rules"
-type = "list.metaobject_reference<$app:price_level>"
-description = "List of price levels / rules valid for the company"
-access.admin = "merchant_read_write"
-
-[company.metafields.pricing.free_shipping]
-name = "Free shipping"
-type = "boolean"
-description = "Free shipping flag for the company"
-access.admin = "merchant_read_write"
-
-# --- ProductVariant ---
-# Note: the CLI may ignore variant metafield blocks on deploy; in that case
-# runtime registration via metafieldDefinitionCreate is required.
-[variant.metafields.pricing.cost]
-name = "Cost (NC)"
-type = "money"
-description = "Purchase cost of the variant"
-access.admin = "merchant_read_write"
-
-[variant.metafields.pricing.rrp]
-name = "RRP"
-type = "money"
-description = "Recommended retail price of the variant"
-access.admin = "merchant_read_write"
-
-[variant.metafields.pricing.supplier]
-name = "Supplier"
-type = "metaobject_reference<$app:partner>"
-description = "Supplier of the variant"
-access.admin = "merchant_read_write"
-
-# --- Product ---
-[product.metafields.feed.locks]
-name = "Feed locks"
-type = "json"
-description = "Field locks to prevent overwriting by an import feed"
-access.admin = "merchant_read_write"
-
-[webhooks]
-api_version = "2026-07"
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/app/uninstalled"
-  topics = [ "app/uninstalled" ]
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/app/scopes_update"
-  topics = [ "app/scopes_update" ]
-
-[auth]
-redirect_urls = [ "https://example.com/api/auth" ]
-
-[build]
-include_config_on_deploy = true
-automatically_update_urls_on_dev = true
+# ================

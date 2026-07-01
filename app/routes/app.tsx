@@ -23,11 +23,9 @@ function Nav() {
   const t = useTranslation();
   return (
     <s-app-nav>
-      <s-link href="/app">{t("nav.home")}</s-link>
       <s-link href="/app/price-levels">{t("nav.priceLevels")}</s-link>
       <s-link href="/app/price-lists">{t("nav.priceLists")}</s-link>
       <s-link href="/app/hardstop">{t("nav.hardstop")}</s-link>
-      <s-link href="/app/additional">{t("nav.additional")}</s-link>
     </s-app-nav>
   );
 }
