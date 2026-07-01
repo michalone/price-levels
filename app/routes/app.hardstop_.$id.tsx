@@ -138,6 +138,7 @@ export default function EditHardstopRule() {
     const shopify = useAppBridge();
     const navigate = useNavigate();
     const t = useTranslation();
+    const hasNavigated = useRef(false);
 
     const [form, setForm] = useState<FieldMap>({
         name: "",

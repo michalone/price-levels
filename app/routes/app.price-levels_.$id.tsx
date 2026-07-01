@@ -148,6 +148,7 @@ export default function EditPriceLevel() {
     const shopify = useAppBridge();
     const navigate = useNavigate();
     const t = useTranslation();
+    const hasNavigated = useRef(false);
 
     const [form, setForm] = useState<FieldMap>({
         name: "",
@@ -172,10 +173,12 @@ export default function EditPriceLevel() {
             position: level.fields.position ?? "",
             active: level.fields.active ?? "true",
         });
+        hasNavigated.current = false;
     }, [level]);
 
     useEffect(() => {
-        if (fetcher.state === "idle" && fetcher.data) {
+        if (fetcher.state === "idle" && fetcher.data && !hasNavigated.current) {
+            hasNavigated.current = true;
             if (fetcher.data.ok) {
                 shopify.toast.show(t("priceLevels.toastUpdated"));
                 navigate("/app/price-levels");
@@ -183,7 +186,7 @@ export default function EditPriceLevel() {
                 shopify.toast.show(fetcher.data.errors[0].message, { isError: true });
             }
         }
-    }, [fetcher.state, fetcher.data, navigate, shopify, t]);
+    }, [fetcher.state, fetcher.data]);
 
     const setField = (key: string, value: string) =>
         setForm((prev) => ({ ...prev, [key]: value }));
