@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "223990817095a461e5090b95d56c4496"
-application_url = "https://roy-lay-wendy-robots.trycloudflare.com"
+application_url = "https://nvr-price-levels.onrender.com"
 embedded = true
 name = "Price Levels"
 handle = "nvr-price-levels"
@@ -12,9 +12,9 @@ scopes = "write_products,write_metaobjects,write_metaobject_definitions,read_cus
 
 [auth]
 redirect_urls = [
-  "http://localhost:3000/auth/callback",
-  "http://localhost:3000/auth/shopify/callback",
-  "http://localhost:3000/api/auth/callback"
+  "https://nvr-price-levels.onrender.com/auth/callback",
+  "https://nvr-price-levels.onrender.com/auth/shopify/callback",
+  "https://nvr-price-levels.onrender.com/api/auth/callback"
 ]
 
 [webhooks]
