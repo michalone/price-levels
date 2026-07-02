@@ -144,7 +144,7 @@ function App() {
             }
             setFlags(initial);
         } catch (e) {
-            setMessage(i18n.translate("loadError"));
+            setMessage(`${i18n.translate("loadError")} ${String(e)}`);
         } finally {
             setLoading(false);
         }
@@ -203,7 +203,7 @@ function App() {
                 {lines.length === 0 ? (
                     <BlockStack gap="base">
                         <Banner tone="info">{i18n.translate("noChanges")}</Banner>
-                        <Text>{i18n.translate("diagnostic", { count: totalLines })}</Text>
+                        <Text>{i18n.translate("diagnostic", { total: totalLines })}</Text>
                         <Button disabled={loading} onClick={load}>
                             {i18n.translate("refresh")}
                         </Button>
@@ -219,7 +219,7 @@ function App() {
                                         <Text fontWeight="bold">
                                             {li.variantTitle ? `${li.title} – ${li.variantTitle}` : li.title}
                                         </Text>
-                                        <Text>{i18n.translate("quantity", { count: li.quantity })}</Text>
+                                        <Text>{i18n.translate("quantity", { qty: li.quantity })}</Text>
                                         <Text>
                                             {i18n.translate("originalPrice", {
                                                 price: formatMoney(li.originalUnitPriceSet?.shopMoney),
