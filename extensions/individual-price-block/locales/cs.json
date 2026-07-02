@@ -1,0 +1,16 @@
+{
+    "title": "Individuální ceny",
+    "intro": "Zobrazeny jsou pouze položky, kde je cena na objednávce jiná než standardní cena produktu pro market objednávky.",
+    "noChanges": "Žádná položka se neliší od standardní ceny.",
+    "save": "Uložit",
+    "refresh": "Refresh",
+    "saved": "Uloženo.",
+    "saveFailed": "Uložení selhalo.",
+    "loadError": "Nepodařilo se načíst data.",
+    "colProduct": "Produkt",
+    "colStandard": "Standardní cena",
+    "colNew": "Nová cena",
+    "colIndividual": "Uložit jako individuální",
+    "yes": "Ano",
+    "no": "Ne"
+}

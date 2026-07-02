@@ -1,0 +1,16 @@
+{
+    "title": "Individual prices",
+    "intro": "Only line items where order price differs from the product standard price for the order market are shown.",
+    "noChanges": "No line item differs from the standard price.",
+    "save": "Save",
+    "refresh": "Refresh",
+    "saved": "Saved.",
+    "saveFailed": "Saving failed.",
+    "loadError": "Failed to load data.",
+    "colProduct": "Product",
+    "colStandard": "Standard price",
+    "colNew": "New price",
+    "colIndividual": "Save as individual",
+    "yes": "Yes",
+    "no": "No"
+}

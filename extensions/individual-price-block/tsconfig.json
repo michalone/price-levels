@@ -1,0 +1,13 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "jsx": "react-jsx",
+        "types": [
+            "@shopify/ui-extensions/admin"
+        ]
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": []
+}
