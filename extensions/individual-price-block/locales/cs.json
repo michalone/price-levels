@@ -1,0 +1,14 @@
+{
+    "title": "Individuální ceny",
+    "intro": "Položky s ručně změněnou cenou. Přepínačem vyberte, které uložit jako individuální cenu.",
+    "noChanges": "Žádná položka nemá ručně změněnou cenu.",
+    "save": "Uložit",
+    "saved": "Uloženo.",
+    "saveFailed": "Uložení selhalo.",
+    "loadError": "Nepodařilo se načíst data.",
+    "toggle": "Uložit jako individuální cenu",
+    "quantity": "Množství: {count}",
+    "originalPrice": "Původní: {price}",
+    "newPrice": "Nová: {price}",
+    "discountAmount": "Sleva: {amount}"
+}

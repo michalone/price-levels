@@ -1,0 +1,14 @@
+{
+    "title": "Individual prices",
+    "intro": "Line items with a manually changed price. Toggle which ones to save as an individual price.",
+    "noChanges": "No line item has a manually changed price.",
+    "save": "Save",
+    "saved": "Saved.",
+    "saveFailed": "Saving failed.",
+    "loadError": "Failed to load the data.",
+    "toggle": "Save as individual price",
+    "quantity": "Qty: {count}",
+    "originalPrice": "Original: {price}",
+    "newPrice": "New: {price}",
+    "discountAmount": "Discount: {amount}"
+}

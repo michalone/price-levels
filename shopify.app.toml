@@ -8,7 +8,7 @@ handle = "nvr-price-levels"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,write_metaobjects,write_metaobject_definitions,read_customers,read_companies,write_companies"
+scopes = "write_products,write_metaobjects,write_metaobject_definitions,read_customers,read_companies,write_companies,write_draft_orders"
 
 [auth]
 redirect_urls = [
