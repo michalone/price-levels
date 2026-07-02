@@ -2,6 +2,8 @@
     "title": "Individuální ceny",
     "intro": "Položky s ručně změněnou cenou. Přepínačem vyberte, které uložit jako individuální cenu.",
     "noChanges": "Žádná položka nemá ručně změněnou cenu.",
+    "diagnostic": "Načtených položek objednávky: {count}",
+    "refresh": "Načíst znovu",
     "save": "Uložit",
     "saved": "Uloženo.",
     "saveFailed": "Uložení selhalo.",

@@ -2,6 +2,8 @@
     "title": "Individual prices",
     "intro": "Line items with a manually changed price. Toggle which ones to save as an individual price.",
     "noChanges": "No line item has a manually changed price.",
+    "diagnostic": "Loaded line items: {count}",
+    "refresh": "Refresh",
     "save": "Save",
     "saved": "Saved.",
     "saveFailed": "Saving failed.",

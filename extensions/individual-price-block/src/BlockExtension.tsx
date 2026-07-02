@@ -64,6 +64,18 @@ function formatMoney(money: Money | null | undefined): string {
     return `${money.amount} ${money.currencyCode}`;
 }
 
+// A line has a manually changed price when either an applied discount is
+// present, or the discounted unit price differs from the original unit price.
+function isPriceChanged(li: LineItem): boolean {
+    if (li.appliedDiscount != null) return true;
+    const original = parseFloat(li.originalUnitPriceSet?.shopMoney?.amount ?? "");
+    const discounted = parseFloat(li.discountedUnitPriceSet?.shopMoney?.amount ?? "");
+    if (!Number.isNaN(original) && !Number.isNaN(discounted) && original !== discounted) {
+        return true;
+    }
+    return false;
+}
+
 function App() {
     const { data, query, i18n } = useApi(TARGET);
     const draftOrderId = data.selected[0]?.id;
@@ -71,6 +83,7 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [lines, setLines] = useState<LineItem[]>([]);
+    const [totalLines, setTotalLines] = useState(0);
     const [flags, setFlags] = useState<Record<string, boolean>>({});
     const [message, setMessage] = useState("");
 
@@ -112,9 +125,9 @@ function App() {
             );
 
             const draft = res?.data?.draftOrder ?? null;
-            const changed = (draft?.lineItems?.nodes ?? []).filter(
-                (li) => li.appliedDiscount != null,
-            );
+            const allLines = draft?.lineItems?.nodes ?? [];
+            const changed = allLines.filter(isPriceChanged);
+            setTotalLines(allLines.length);
             setLines(changed);
 
             let stored: Record<string, boolean> = {};
@@ -188,7 +201,13 @@ function App() {
         <AdminBlock title={i18n.translate("title")}>
             <BlockStack gap="base">
                 {lines.length === 0 ? (
-                    <Banner tone="info">{i18n.translate("noChanges")}</Banner>
+                    <BlockStack gap="base">
+                        <Banner tone="info">{i18n.translate("noChanges")}</Banner>
+                        <Text>{i18n.translate("diagnostic", { count: totalLines })}</Text>
+                        <Button disabled={loading} onClick={load}>
+                            {i18n.translate("refresh")}
+                        </Button>
+                    </BlockStack>
                 ) : (
                     <BlockStack gap="base">
                         <Text>{i18n.translate("intro")}</Text>
@@ -233,6 +252,9 @@ function App() {
                         ))}
                         <Button variant="primary" disabled={saving} onClick={save}>
                             {i18n.translate("save")}
+                        </Button>
+                        <Button disabled={loading} onClick={load}>
+                            {i18n.translate("refresh")}
                         </Button>
                     </BlockStack>
                 )}
