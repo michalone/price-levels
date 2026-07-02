@@ -203,7 +203,7 @@ function App() {
                 {lines.length === 0 ? (
                     <BlockStack gap="base">
                         <Banner tone="info">{i18n.translate("noChanges")}</Banner>
-                        <Text>{i18n.translate("diagnostic", { total: totalLines })}</Text>
+                        <Text>{`${i18n.translate("diagnostic")} ${totalLines}`}</Text>
                         <Button disabled={loading} onClick={load}>
                             {i18n.translate("refresh")}
                         </Button>
@@ -219,22 +219,16 @@ function App() {
                                         <Text fontWeight="bold">
                                             {li.variantTitle ? `${li.title} – ${li.variantTitle}` : li.title}
                                         </Text>
-                                        <Text>{i18n.translate("quantity", { qty: li.quantity })}</Text>
+                                        <Text>{`${i18n.translate("quantity")} ${li.quantity}`}</Text>
                                         <Text>
-                                            {i18n.translate("originalPrice", {
-                                                price: formatMoney(li.originalUnitPriceSet?.shopMoney),
-                                            })}
+                                            {`${i18n.translate("originalPrice")} ${formatMoney(li.originalUnitPriceSet?.shopMoney)}`}
                                         </Text>
                                         <Text>
-                                            {i18n.translate("newPrice", {
-                                                price: formatMoney(li.discountedUnitPriceSet?.shopMoney),
-                                            })}
+                                            {`${i18n.translate("newPrice")} ${formatMoney(li.discountedUnitPriceSet?.shopMoney)}`}
                                         </Text>
                                         {li.appliedDiscount?.amountSet?.shopMoney ? (
                                             <Text>
-                                                {i18n.translate("discountAmount", {
-                                                    amount: formatMoney(li.appliedDiscount.amountSet.shopMoney),
-                                                })}
+                                                {`${i18n.translate("discountAmount")} ${formatMoney(li.appliedDiscount.amountSet.shopMoney)}`}
                                             </Text>
                                         ) : null}
                                     </BlockStack>
